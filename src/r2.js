@@ -18,12 +18,12 @@ async function uploadToR2(file) {
     Key: Date.now() + path.extname(file.originalname),
     Body: file.buffer,
     ContentType: file.mimetype,
-    ACL: "public-read", // optional, just in case
+    ACL: "public-read",
   };
 
   await s3.upload(params).promise();
 
-  // ✅ Use your public R2 base URL
+  // Public URL
   return `https://pub-06a2a441a00c4ef597b4f4f0cac7cddf.r2.dev/${params.Key}`;
 }
 
