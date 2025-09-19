@@ -1,4 +1,4 @@
-// r2Upload.js
+// r2.js
 const AWS = require("aws-sdk");
 const path = require("path");
 
@@ -13,20 +13,19 @@ const s3 = new AWS.S3({
 async function uploadToR2(file) {
   if (!file) return null;
 
-  const key = `${Date.now()}${path.extname(file.originalname)}`;
-
   const params = {
     Bucket: process.env.R2_BUCKET_NAME,
-    Key: key,
+    Key: Date.now() + path.extname(file.originalname),
     Body: file.buffer,
     ContentType: file.mimetype,
-    ACL: "public-read", // optional if you want the file public
+    ACL: "public-read", // optional, just in case
   };
 
   await s3.upload(params).promise();
 
-  // Public URL
-  return `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${key}`;
+  // ✅ Use your public R2 base URL
+  return `https://pub-06a2a441a00c4ef597b4f4f0cac7cddf.r2.dev/${params.Key}`;
 }
 
 module.exports = uploadToR2;
+
