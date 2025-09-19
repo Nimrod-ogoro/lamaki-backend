@@ -1,4 +1,3 @@
-// controllers/authController.js
 require('dotenv').config();
 const pool = require('../db');
 const bcrypt = require('bcrypt');
@@ -7,24 +6,36 @@ const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) console.error('⚠️ JWT_SECRET not set in .env');
 
+// Register user
 exports.register = async (req, res) => {
   const { name, email, password } = req.body;
   try {
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: 'Name, email, and password are required' });
+    }
+
     const hashed = await bcrypt.hash(password, 10);
     const result = await pool.query(
       'INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING id, name, email',
       [name, email, hashed]
     );
+
     res.json({ user: result.rows[0] });
   } catch (err) {
     if (err.code === '23505') return res.status(400).json({ message: 'Email already exists' });
-    res.status(500).json({ message: err.message });
+    console.error('❌ Error registering user:', err);
+    res.status(500).json({ message: 'Server error registering user' });
   }
 };
 
+// Login user
 exports.login = async (req, res) => {
   const { email, password } = req.body;
   try {
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password are required' });
+    }
+
     const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
     if (result.rows.length === 0) return res.status(400).json({ message: 'Invalid credentials' });
 
@@ -36,18 +47,22 @@ exports.login = async (req, res) => {
 
     res.json({
       token,
-      user: { id: user.id, name: user.name, email: user.email }
+      user: { id: user.id, name: user.name, email: user.email },
     });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('❌ Error logging in user:', err);
+    res.status(500).json({ message: 'Server error logging in user' });
   }
 };
 
+// Get all users
 exports.getUsers = async (req, res) => {
   try {
     const result = await pool.query('SELECT id, name, email FROM users ORDER BY id DESC');
-    res.json(result.rows);
+    const users = Array.isArray(result.rows) ? result.rows : [];
+    res.json(users);
   } catch (err) {
+    console.error('❌ Error fetching users:', err);
     res.status(500).json({ error: 'Server error fetching users' });
   }
 };

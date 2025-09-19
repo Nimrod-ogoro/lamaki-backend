@@ -1,9 +1,25 @@
 const pool = require("../db");
 
+// Helper → ensure products is always an array
+function normalizeProducts(input) {
+  if (!input) return [];
+  if (Array.isArray(input)) return input;
+  try {
+    const parsed = JSON.parse(input);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
 // Create new order
 const createOrder = async (req, res) => {
   try {
     const { user_id, products, total_price, status } = req.body;
+
+    if (!user_id || !products || !total_price) {
+      return res.status(400).json({ message: "user_id, products, and total_price are required" });
+    }
 
     const result = await pool.query(
       `INSERT INTO orders (user_id, products, total_price, status)
@@ -11,8 +27,14 @@ const createOrder = async (req, res) => {
       [user_id, JSON.stringify(products), total_price, status || "pending"]
     );
 
-    res.status(201).json(result.rows[0]);
+    const order = {
+      ...result.rows[0],
+      products: normalizeProducts(result.rows[0].products),
+    };
+
+    res.status(201).json(order);
   } catch (error) {
+    console.error("❌ Error creating order:", error);
     res.status(500).json({ message: "Failed to create order", error: error.message });
   }
 };
@@ -21,8 +43,15 @@ const createOrder = async (req, res) => {
 const getOrders = async (req, res) => {
   try {
     const result = await pool.query("SELECT * FROM orders ORDER BY created_at DESC");
-    res.json(result.rows);
+
+    const orders = result.rows.map((o) => ({
+      ...o,
+      products: normalizeProducts(o.products),
+    }));
+
+    res.json(orders);
   } catch (error) {
+    console.error("❌ Error fetching orders:", error);
     res.status(500).json({ message: "Failed to fetch orders", error: error.message });
   }
 };
@@ -37,8 +66,14 @@ const getOrderById = async (req, res) => {
       return res.status(404).json({ message: "Order not found" });
     }
 
-    res.json(result.rows[0]);
+    const order = {
+      ...result.rows[0],
+      products: normalizeProducts(result.rows[0].products),
+    };
+
+    res.json(order);
   } catch (error) {
+    console.error("❌ Error fetching order by ID:", error);
     res.status(500).json({ message: "Failed to fetch order", error: error.message });
   }
 };
@@ -60,8 +95,14 @@ const updateOrder = async (req, res) => {
       return res.status(404).json({ message: "Order not found" });
     }
 
-    res.json(result.rows[0]);
+    const order = {
+      ...result.rows[0],
+      products: normalizeProducts(result.rows[0].products),
+    };
+
+    res.json(order);
   } catch (error) {
+    console.error("❌ Error updating order:", error);
     res.status(500).json({ message: "Failed to update order", error: error.message });
   }
 };
@@ -78,6 +119,7 @@ const deleteOrder = async (req, res) => {
 
     res.json({ message: "Order deleted successfully" });
   } catch (error) {
+    console.error("❌ Error deleting order:", error);
     res.status(500).json({ message: "Failed to delete order", error: error.message });
   }
 };
@@ -89,3 +131,4 @@ module.exports = {
   updateOrder,
   deleteOrder,
 };
+
