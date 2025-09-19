@@ -1,4 +1,5 @@
 const AWS = require("aws-sdk");
+const path = require("path");
 
 const s3 = new AWS.S3({
   endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
