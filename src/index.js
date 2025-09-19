@@ -26,13 +26,12 @@ app.use(compression());
 // ===== CORS Setup =====
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://lamaki-construction.vercel.app",
+  "https://lamaki-construction.vercel.app",   // ✅ space removed
 ];
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      // allow requests with no origin (like Postman)
       if (!origin) return callback(null, true);
       if (allowedOrigins.indexOf(origin) === -1) {
         return callback(new Error("CORS policy violation"), false);
@@ -55,7 +54,7 @@ app.use(
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false }, // change to true if using HTTPS
+    cookie: { secure: false }, // set true if HTTPS
   })
 );
 
@@ -85,7 +84,5 @@ app.use((req, res) => {
   res.status(404).json({ error: "Route not found" });
 });
 
-// ===== Start Server =====
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
-});
+// ===== Export for Vercel (serverless) =====
+module.exports = app;   // ✅ DO NOT call app.listen() on Vercel
