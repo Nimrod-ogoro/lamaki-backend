@@ -29,7 +29,7 @@ app.use(cors({
 app.use(helmet());
 app.use(cors({ origin: ['https://lamaki-construction.vercel.app', 'http://localhost:5173'] }));
 
-// ===== Body parser =====
+// ===== Body parser ===== men it should bw working am tired
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

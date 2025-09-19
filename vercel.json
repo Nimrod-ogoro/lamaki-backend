@@ -1,14 +1,21 @@
 {
   "version": 2,
-  "builds": [{ "src": "server.js", "use": "@vercel/node" }],
-  "routes": [{ "src": "/(.*)", "dest": "server.js" }],
+  "builds": [
+    { "src": "server.js", "use": "@vercel/node" }
+  ],
+  "routes": [
+    { "src": "/(.*)", "dest": "server.js" }
+  ],
   "env": {
-    "DATABASE_URL": "postgres://postgres:Nimrod13542@nimmwlzedtaeqeirmdvx.supabase.co:6543/postgres?pgbouncer=true",
-    "JWT_SECRET": "330ec4318863dabea1cc31390491f1fa4e04d5c041a2c91c180a0d61d22d8fd",
+    "DATABASE_URL": "@db_url",
+    "JWT_SECRET": "@jwt_secret",
+    "SESSION_SECRET": "@session_secret",
+    "GOOGLE_CLIENT_ID": "@google_client_id",
+    "GOOGLE_CLIENT_SECRET": "@google_client_secret",
     "MPESA_CONSUMER_KEY": "@mpesa_consumer_key",
     "MPESA_CONSUMER_SECRET": "@mpesa_consumer_secret",
     "MPESA_SHORTCODE": "@mpesa_shortcode",
     "MPESA_PASSKEY": "@mpesa_passkey",
-    "MPESA_CALLBACK_URL": "@mpesa_callback_url" 
+    "MPESA_CALLBACK_URL": "@mpesa_callback_url"
   }
 }
