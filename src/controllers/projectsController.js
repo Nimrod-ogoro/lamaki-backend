@@ -7,7 +7,7 @@ function normalizeToArray(input) {
   if (Array.isArray(input)) return input;
   if (typeof input === "string") {
     const parts = input
-      .split(/[\n,]+/)        // split by commas or line breaks
+      .split(/[\n,]+/) // split by commas or line breaks
       .map((d) => d.trim())
       .filter((d) => d.length > 0);
     return parts.length > 0 ? parts : [input.trim()];
@@ -15,11 +15,12 @@ function normalizeToArray(input) {
   return [String(input)];
 }
 
-// Create Project
+// ===== CREATE PROJECT (with R2 images) =====
 exports.createProject = async (req, res) => {
   try {
     let { name, description } = req.body;
-    const images = req.files ? req.files.map((f) => f.filename) : [];
+    // multer-s3 gives public URL in file.location
+    const images = req.files ? req.files.map((f) => f.location) : [];
 
     description = normalizeToArray(description);
 
@@ -28,7 +29,6 @@ exports.createProject = async (req, res) => {
       [name, description, images]
     );
 
-    // Ensure arrays for frontend
     const project = {
       ...result.rows[0],
       description: normalizeToArray(result.rows[0].description),
@@ -42,7 +42,7 @@ exports.createProject = async (req, res) => {
   }
 };
 
-// Get all Projects
+// ===== GET ALL PROJECTS =====
 exports.getProjects = async (req, res) => {
   try {
     const result = await pool.query("SELECT * FROM projects ORDER BY created_at DESC");
@@ -60,7 +60,7 @@ exports.getProjects = async (req, res) => {
   }
 };
 
-// Get Project by ID
+// ===== GET PROJECT BY ID =====
 exports.getProjectById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -81,12 +81,12 @@ exports.getProjectById = async (req, res) => {
   }
 };
 
-// Update Project
+// ===== UPDATE PROJECT =====
 exports.updateProject = async (req, res) => {
   try {
     const { id } = req.params;
     let { name, description } = req.body;
-    const images = req.files ? req.files.map((f) => f.filename) : [];
+    const images = req.files ? req.files.map((f) => f.location) : [];
 
     description = normalizeToArray(description);
 
@@ -110,7 +110,7 @@ exports.updateProject = async (req, res) => {
   }
 };
 
-// Delete Project
+// ===== DELETE PROJECT =====
 exports.deleteProject = async (req, res) => {
   try {
     const { id } = req.params;

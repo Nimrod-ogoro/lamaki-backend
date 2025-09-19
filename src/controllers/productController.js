@@ -1,23 +1,24 @@
 const pool = require("../db");
 
-// Helper → ensure valid numeric values
+// Helper → ensure numeric values
 function parseNumber(value, fallback = 0) {
   const num = parseFloat(value);
   return isNaN(num) ? fallback : num;
 }
 
-// ✅ Create Product
+// ✅ Create Product (R2)
 const createProduct = async (req, res) => {
   try {
     const { name, price, description, stock } = req.body;
-    const image_url = req.file ? `/uploads/${req.file.filename}` : null;
+    // multer-s3 stores uploaded file URL in req.file.location
+    const image_url = req.file ? req.file.location : null;
 
     if (!name || price === undefined || stock === undefined) {
       return res.status(400).json({ error: "Name, price, and stock are required" });
     }
 
     const result = await pool.query(
-      `INSERT INTO products (name, price, description, stock, image_url) 
+      `INSERT INTO products (name, price, description, stock, image_url)
        VALUES ($1, $2, $3, $4, $5) RETURNING *`,
       [name, parseNumber(price), description || "", parseNumber(stock), image_url]
     );
@@ -29,18 +30,16 @@ const createProduct = async (req, res) => {
   }
 };
 
-// ✅ Get All Products
+// ✅ Get all Products
 const getProducts = async (req, res) => {
   try {
     const result = await pool.query("SELECT * FROM products ORDER BY id DESC");
-
     const products = result.rows.map(p => ({
       ...p,
       price: parseNumber(p.price),
       stock: parseNumber(p.stock),
       image_url: p.image_url || null
     }));
-
     res.json(products);
   } catch (err) {
     console.error("❌ Error fetching products:", err);
@@ -67,11 +66,11 @@ const getProductById = async (req, res) => {
   }
 };
 
-// ✅ Update Product
+// ✅ Update Product (R2)
 const updateProduct = async (req, res) => {
   try {
     const { name, price, description, stock } = req.body;
-    const image_url = req.file ? `/uploads/${req.file.filename}` : null;
+    const image_url = req.file ? req.file.location : null;
 
     const result = await pool.query(
       `UPDATE products 
@@ -115,3 +114,4 @@ module.exports = {
   updateProduct,
   deleteProduct
 };
+
