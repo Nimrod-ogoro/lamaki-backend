@@ -1,5 +1,5 @@
-// controllers/projectsController.js
 const pool = require("../db");
+const uploadToR2 = require("../r2Upload"); // helper to upload files to Cloudflare R2
 
 // Helper → always returns TEXT[]
 function normalizeToArray(input) {
@@ -8,19 +8,22 @@ function normalizeToArray(input) {
   if (typeof input === "string") {
     const parts = input
       .split(/[\n,]+/) // split by commas or line breaks
-      .map((d) => d.trim())
-      .filter((d) => d.length > 0);
+      .map(d => d.trim())
+      .filter(d => d.length > 0);
     return parts.length > 0 ? parts : [input.trim()];
   }
   return [String(input)];
 }
 
-// ===== CREATE PROJECT (with R2 images) =====
+// ===== CREATE PROJECT =====
 exports.createProject = async (req, res) => {
   try {
     let { name, description } = req.body;
-    // multer-s3 gives public URL in file.location
-    const images = req.files ? req.files.map((f) => f.location) : [];
+
+    // upload images to R2
+    const images = req.files
+      ? await Promise.all(req.files.map(f => uploadToR2(f)))
+      : [];
 
     description = normalizeToArray(description);
 
@@ -47,7 +50,7 @@ exports.getProjects = async (req, res) => {
   try {
     const result = await pool.query("SELECT * FROM projects ORDER BY created_at DESC");
 
-    const projects = result.rows.map((p) => ({
+    const projects = result.rows.map(p => ({
       ...p,
       description: Array.isArray(p.description) ? p.description : [],
       images: Array.isArray(p.images) ? p.images : [],
@@ -64,9 +67,9 @@ exports.getProjects = async (req, res) => {
 exports.getProjectById = async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await pool.query("SELECT * FROM projects WHERE id = $1", [id]);
+    const result = await pool.query("SELECT * FROM projects WHERE id=$1", [id]);
 
-    if (result.rows.length === 0) return res.status(404).json({ error: "Project not found" });
+    if (!result.rows.length) return res.status(404).json({ error: "Project not found" });
 
     const project = {
       ...result.rows[0],
@@ -86,7 +89,10 @@ exports.updateProject = async (req, res) => {
   try {
     const { id } = req.params;
     let { name, description } = req.body;
-    const images = req.files ? req.files.map((f) => f.location) : [];
+
+    const images = req.files
+      ? await Promise.all(req.files.map(f => uploadToR2(f)))
+      : [];
 
     description = normalizeToArray(description);
 
@@ -95,7 +101,7 @@ exports.updateProject = async (req, res) => {
       [name, description, images, id]
     );
 
-    if (result.rows.length === 0) return res.status(404).json({ error: "Project not found" });
+    if (!result.rows.length) return res.status(404).json({ error: "Project not found" });
 
     const project = {
       ...result.rows[0],
@@ -116,7 +122,7 @@ exports.deleteProject = async (req, res) => {
     const { id } = req.params;
     const result = await pool.query("DELETE FROM projects WHERE id=$1 RETURNING *", [id]);
 
-    if (result.rows.length === 0) return res.status(404).json({ error: "Project not found" });
+    if (!result.rows.length) return res.status(404).json({ error: "Project not found" });
 
     res.json({ message: "✅ Project deleted" });
   } catch (err) {

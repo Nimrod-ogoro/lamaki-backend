@@ -1,7 +1,5 @@
 const express = require("express");
 const multer = require("multer");
-const multerS3 = require("multer-s3");
-const AWS = require("aws-sdk");
 const {
   createProject,
   getProjects,
@@ -12,27 +10,9 @@ const {
 
 const router = express.Router();
 
-// Cloudflare R2 config
-const s3 = new AWS.S3({
-  endpoint: new AWS.Endpoint(process.env.R2_ENDPOINT), // e.g. https://<account_id>.r2.cloudflarestorage.com
-  accessKeyId: process.env.R2_ACCESS_KEY,
-  secretAccessKey: process.env.R2_SECRET_KEY,
-  region: "auto",
-});
+// memory storage for R2 uploads
+const upload = multer({ storage: multer.memoryStorage() });
 
-// Multer S3 setup for multiple images
-const upload = multer({
-  storage: multerS3({
-    s3,
-    bucket: process.env.R2_BUCKET, // e.g., "lamaki"
-    acl: "public-read",
-    key: (req, file, cb) => {
-      cb(null, `${Date.now()}_${file.originalname}`);
-    },
-  }),
-});
-
-// Routes
 router.post("/", upload.array("images"), createProject);
 router.get("/", getProjects);
 router.get("/:id", getProjectById);
@@ -40,4 +20,5 @@ router.put("/:id", upload.array("images"), updateProject);
 router.delete("/:id", deleteProject);
 
 module.exports = router;
+
 

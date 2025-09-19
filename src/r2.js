@@ -1,4 +1,5 @@
 const AWS = require("aws-sdk");
+const path = require("path");
 
 const s3 = new AWS.S3({
   endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
@@ -6,15 +7,20 @@ const s3 = new AWS.S3({
   secretAccessKey: process.env.R2_SECRET_KEY,
 });
 
-if (req.file) {
+async function uploadToR2(file) {
+  if (!file) return null;
+
   const params = {
     Bucket: process.env.R2_BUCKET,
-    Key: Date.now() + path.extname(req.file.originalname),
-    Body: req.file.buffer,
-    ContentType: req.file.mimetype,
+    Key: Date.now() + path.extname(file.originalname),
+    Body: file.buffer,
+    ContentType: file.mimetype,
     ACL: "public-read",
   };
+
   const data = await s3.upload(params).promise();
-  image_url = data.Location; // this goes to DB
+  return `${process.env.R2_URL}/${params.Key}`;
 }
+
+module.exports = uploadToR2;
 
