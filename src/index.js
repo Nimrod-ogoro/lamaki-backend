@@ -14,14 +14,12 @@ const orderRoutes = require("./routes/OrderRoutes");
 const cartRoutes = require("./routes/Cart");
 const mpesaRoutes = require("./routes/mpesa");
 const multer = require("multer");
-const storage = multer.memoryStorage(); // ✅ now exists
-const upload = multer({ storage });
-
+const path = require("path");
+const fs = require("fs");
 
 dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 5000;
 
 // ===== Security & Compression =====
 app.use(helmet());
@@ -31,7 +29,7 @@ app.use(compression());
 const allowedOrigins = [
   "http://localhost:5173",
   "https://lamaki-construction.vercel.app",
-  "https://lamaki-construction-git-main-nimrod-ogoros-projects.vercel.app", // <-- ADD
+  "https://lamaki-construction-git-main-nimrod-ogoros-projects.vercel.app",
 ];
 
 app.use(
@@ -59,7 +57,7 @@ app.use(
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false }, // set true if HTTPS
+    cookie: { secure: process.env.NODE_ENV === "production" }, // HTTPS only in prod
   })
 );
 
@@ -67,8 +65,23 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
+// ===== File Upload Setup =====
+// store uploaded files in memory first
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
+
+// fallback for production: save files locally
+const uploadToLocal = async (file) => {
+  if (!file) return null;
+  const uploadDir = path.join(__dirname, "uploads");
+  if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
+  const filePath = path.join(uploadDir, `${Date.now()}_${file.originalname}`);
+  fs.writeFileSync(filePath, file.buffer);
+  return `/uploads/${path.basename(filePath)}`;
+};
+
 // ===== Static Files =====
-app.use("/uploads", express.static("uploads"));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // ===== Test Route =====
 app.get("/", (req, res) => {
@@ -83,11 +96,17 @@ app.use("/api/projects", projectRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/mpesa", mpesaRoutes);
-app.use(upload.any()); // parses multipart/form-data
+
 // ===== 404 Handler =====
 app.use((req, res) => {
   res.status(404).json({ error: "Route not found" });
 });
 
+// ===== Error Handler =====
+app.use((err, req, res, next) => {
+  console.error("❌ Server error:", err);
+  res.status(500).json({ error: err.message || "Server error" });
+});
+
 // ===== Export for Vercel (serverless) =====
-module.exports = app;   // ✅ DO NOT call app.listen() on Vercel
+module.exports = app; // DO NOT call app.listen() on Vercel
