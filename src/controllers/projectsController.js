@@ -1,5 +1,5 @@
 const pool = require("../db");
-const uploadToR2 = require("../r2Upload"); // helper to upload files to Cloudflare R2
+const uploadToR2 = require("../r2"); // helper to upload files to Cloudflare R2
 
 // Helper → always returns TEXT[]
 function normalizeToArray(input) {
