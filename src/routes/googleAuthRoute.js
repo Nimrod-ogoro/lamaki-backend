@@ -5,6 +5,9 @@ const jwt = require("jsonwebtoken");
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || "supersecret";
 
+// Use environment variable for frontend URL (default to localhost)
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
+
 // Step 1: Start OAuth login
 router.get(
   "/google",
@@ -14,7 +17,7 @@ router.get(
 // Step 2: Handle OAuth callback
 router.get(
   "/google/callback",
-  passport.authenticate("google", { failureRedirect: "http://localhost:5173" }),
+  passport.authenticate("google", { failureRedirect: FRONTEND_URL }),
   (req, res) => {
     // Create JWT token
     const token = jwt.sign(
@@ -24,11 +27,12 @@ router.get(
     );
 
     // Redirect to frontend with token in query
-    res.redirect(`http://localhost:5173/MerchShop?token=${token}`);
+    res.redirect(`${FRONTEND_URL}/MerchShop?token=${token}`);
   }
 );
 
 module.exports = router;
+
 
 
 
