@@ -14,7 +14,7 @@ const orderRoutes = require("./routes/OrderRoutes");
 const cartRoutes = require("./routes/Cart");
 const mpesaRoutes = require("./routes/mpesa");
 const multer = require("multer");
-const storage = multer.memoryStorage(); // ✅ no disk write
+const storage = multer.memoryStorage(); // ✅ now exists
 const upload = multer({ storage });
 
 
