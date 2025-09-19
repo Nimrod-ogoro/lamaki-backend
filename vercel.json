@@ -9,6 +9,6 @@
     "MPESA_CONSUMER_SECRET": "@mpesa_consumer_secret",
     "MPESA_SHORTCODE": "@mpesa_shortcode",
     "MPESA_PASSKEY": "@mpesa_passkey",
-    "MPESA_CALLBACK_URL": "@mpesa_callback_url"
+    "MPESA_CALLBACK_URL": "@mpesa_callback_url" 
   }
 }
