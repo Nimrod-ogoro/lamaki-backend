@@ -13,6 +13,8 @@ const projectRoutes = require("./routes/projectRoutes");
 const orderRoutes = require("./routes/OrderRoutes");
 const cartRoutes = require("./routes/Cart");
 const mpesaRoutes = require("./routes/mpesa");
+const multer = require("multer");
+const upload = multer({ dest: "uploads/" }); // or memoryStorage()
 
 dotenv.config();
 
@@ -26,7 +28,8 @@ app.use(compression());
 // ===== CORS Setup =====
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://lamaki-construction.vercel.app",   // ✅ space removed
+  "https://lamaki-construction.vercel.app",
+  "https://lamaki-construction-git-main-nimrod-ogoros-projects.vercel.app", // <-- ADD
 ];
 
 app.use(
@@ -78,7 +81,7 @@ app.use("/api/projects", projectRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/mpesa", mpesaRoutes);
-
+app.use(upload.any()); // parses multipart/form-data
 // ===== 404 Handler =====
 app.use((req, res) => {
   res.status(404).json({ error: "Route not found" });
