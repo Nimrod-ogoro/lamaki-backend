@@ -4,7 +4,7 @@
   "routes": [{ "src": "/(.*)", "dest": "server.js" }],
   "env": {
     "DATABASE_URL": "postgres://postgres:Nimrod13542@nimmwlzedtaeqeirmdvx.supabase.co:6543/postgres?pgbouncer=true",
-    "JWT_SECRET": "@jwt_secret",
+    "JWT_SECRET": "330ec4318863dabea1cc31390491f1fa4e04d5c041a2c91c180a0d61d22d8fd",
     "MPESA_CONSUMER_KEY": "@mpesa_consumer_key",
     "MPESA_CONSUMER_SECRET": "@mpesa_consumer_secret",
     "MPESA_SHORTCODE": "@mpesa_shortcode",
