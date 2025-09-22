@@ -11,12 +11,13 @@ const {
 
 const router = express.Router();
 
-// Memory storage for Cloudflare R2 uploads
+// ===== Multer Memory Storage (for Cloudflare R2 uploads) =====
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
 // ===== CREATE PROJECT =====
-router.post("/", upload.array("images"), createProject);
+// Accepts both single and multiple images
+router.post("/", upload.array("images", 10), createProject);
 
 // ===== GET ALL PROJECTS =====
 router.get("/", getProjects);
@@ -25,11 +26,13 @@ router.get("/", getProjects);
 router.get("/:id", getProjectById);
 
 // ===== UPDATE PROJECT =====
-router.put("/:id", upload.array("images"), updateProject);
+// Works for single or multiple new images
+router.put("/:id", upload.array("images", 10), updateProject);
 
 // ===== DELETE PROJECT =====
 router.delete("/:id", deleteProject);
 
 module.exports = router;
+
 
 
