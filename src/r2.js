@@ -1,45 +1,69 @@
 // r2.js
 const AWS = require("aws-sdk");
-const path = require("path");
 
+// Configure S3 for Cloudflare R2
 const s3 = new AWS.S3({
   endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
   accessKeyId: process.env.R2_ACCESS_KEY_ID,
   secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
-  region: process.env.R2_REGION || "auto",
+  region: "auto", // R2 uses "auto", AWS SDK is okay with this
   signatureVersion: "v4",
 });
 
-// Upload (old method, requires file.buffer) ❌ not good for Vercel
+// Helper: generate safe object key
+function generateKey(filename) {
+  return `${Date.now()}_${filename.replace(/\s+/g, "_")}`;
+}
+
+// ✅ Backend upload (not ideal for Vercel, but works for APIs / product feeds)
 async function uploadToR2(file) {
   if (!file) return null;
-  const key = `${Date.now()}_${file.originalname.replace(/\s+/g, "_")}`;
+
+  const key = generateKey(file.originalname);
+
   const params = {
     Bucket: process.env.R2_BUCKET_NAME,
     Key: key,
     Body: file.buffer,
     ContentType: file.mimetype,
   };
+
   await s3.upload(params).promise();
+
   return `https://pub-${process.env.R2_ACCOUNT_ID}.r2.dev/${key}`;
 }
 
-// Generate a signed URL for frontend to upload directly ✅
+// ✅ Generate signed URL for frontend direct upload
 async function getSignedUploadURL(filename, mimetype) {
-  const key = `${Date.now()}_${filename.replace(/\s+/g, "_")}`;
+  const key = generateKey(filename);
+
   const uploadURL = await s3.getSignedUrlPromise("putObject", {
     Bucket: process.env.R2_BUCKET_NAME,
     Key: key,
     ContentType: mimetype,
-    Expires: 60, // 1 minute expiry
+    Expires: 60, // upload link valid for 1 min
   });
-  return {
-    uploadURL,
-    fileURL: `https://pub-${process.env.R2_ACCOUNT_ID}.r2.dev/${key}`,
-  };
+
+  // Public URL (works if bucket is public)
+  const fileURL = `https://pub-${process.env.R2_ACCOUNT_ID}.r2.dev/${key}`;
+
+  return { uploadURL, fileURL, key };
 }
 
-module.exports = { uploadToR2, getSignedUploadURL };
+// ✅ Optional: generate signed GET URL (works even if bucket is private)
+async function getSignedDownloadURL(key) {
+  return await s3.getSignedUrlPromise("getObject", {
+    Bucket: process.env.R2_BUCKET_NAME,
+    Key: key,
+    Expires: 300, // 5 minutes expiry
+  });
+}
+
+module.exports = {
+  uploadToR2,
+  getSignedUploadURL,
+  getSignedDownloadURL, // only use if bucket is private
+};
 
 
 
