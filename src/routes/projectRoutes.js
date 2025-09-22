@@ -16,7 +16,13 @@ const router = express.Router();
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// ===== CREATE PROJECT (backend-managed upload via Multer) =====
+// ==========================================================
+// ============   PROJECT ROUTES (CRUD)   ===================
+// ==========================================================
+
+// ===== CREATE PROJECT =====
+// Option 1: Frontend uploads images directly using signed URL
+// Option 2: Upload images through backend using Multer
 router.post("/", upload.array("images", 10), createProject);
 
 // ===== GET ALL PROJECTS =====
@@ -26,20 +32,30 @@ router.get("/", getProjects);
 router.get("/:id", getProjectById);
 
 // ===== UPDATE PROJECT =====
+// Supports new images via Multer, or frontend direct upload
 router.put("/:id", upload.array("images", 10), updateProject);
 
 // ===== DELETE PROJECT =====
 router.delete("/:id", deleteProject);
 
-// ===== GET SIGNED URL (frontend direct upload) =====
+// ==========================================================
+// ============   CLOUD STORAGE HELPERS   ===================
+// ==========================================================
+
+// ===== GET SIGNED URL =====
+// This allows frontend to upload images directly to R2
+// Example request: GET /api/projects/signed-url?filename=test.png&mimetype=image/png
 router.get("/signed-url", async (req, res) => {
   try {
     const { filename, mimetype } = req.query;
+
     if (!filename || !mimetype) {
       return res.status(400).json({ error: "Missing filename or mimetype" });
     }
 
+    // Generate signed URL using r2.js helper
     const result = await getSignedUploadURL(filename, mimetype);
+
     res.json(result);
   } catch (err) {
     console.error("Error generating signed URL:", err);
@@ -48,6 +64,7 @@ router.get("/signed-url", async (req, res) => {
 });
 
 module.exports = router;
+
 
 
 
