@@ -1,5 +1,15 @@
 const pool = require("../db");
 const uploadToR2 = require("../r2"); // helper to upload files to Cloudflare R2
+const AWS = require("aws-sdk");
+
+// Setup R2 client (for deleting)
+const s3 = new AWS.S3({
+  endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  accessKeyId: process.env.R2_ACCESS_KEY_ID,
+  secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
+  region: process.env.R2_REGION || "us-east-1",
+  signatureVersion: "v4",
+});
 
 // Helper → always returns TEXT[]
 function normalizeToArray(input) {
@@ -90,9 +100,19 @@ exports.updateProject = async (req, res) => {
     const { id } = req.params;
     let { name, description } = req.body;
 
-    const images = req.files
+    // Upload new images if any
+    const newImages = req.files
       ? await Promise.all(req.files.map(f => uploadToR2(f)))
       : [];
+
+    // Get existing project
+    const existing = await pool.query("SELECT * FROM projects WHERE id=$1", [id]);
+    if (!existing.rows.length) return res.status(404).json({ error: "Project not found" });
+
+    const oldImages = Array.isArray(existing.rows[0].images) ? existing.rows[0].images : [];
+
+    // Merge old + new
+    const images = [...oldImages, ...newImages];
 
     description = normalizeToArray(description);
 
@@ -100,8 +120,6 @@ exports.updateProject = async (req, res) => {
       "UPDATE projects SET name=$1, description=$2, images=$3, updated_at=NOW() WHERE id=$4 RETURNING *",
       [name, description, images, id]
     );
-
-    if (!result.rows.length) return res.status(404).json({ error: "Project not found" });
 
     const project = {
       ...result.rows[0],
@@ -120,11 +138,30 @@ exports.updateProject = async (req, res) => {
 exports.deleteProject = async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await pool.query("DELETE FROM projects WHERE id=$1 RETURNING *", [id]);
 
-    if (!result.rows.length) return res.status(404).json({ error: "Project not found" });
+    // Get project before deleting
+    const existing = await pool.query("SELECT * FROM projects WHERE id=$1", [id]);
+    if (!existing.rows.length) return res.status(404).json({ error: "Project not found" });
 
-    res.json({ message: "✅ Project deleted" });
+    const images = Array.isArray(existing.rows[0].images) ? existing.rows[0].images : [];
+
+    // Delete images from R2
+    await Promise.all(images.map(async (url) => {
+      try {
+        const key = url.split("/").pop(); // filename
+        await s3.deleteObject({
+          Bucket: process.env.R2_BUCKET_NAME,
+          Key: key,
+        }).promise();
+      } catch (err) {
+        console.error("⚠️ Failed to delete image from R2:", url, err.message);
+      }
+    }));
+
+    // Delete project from DB
+    await pool.query("DELETE FROM projects WHERE id=$1", [id]);
+
+    res.json({ message: "✅ Project and images deleted" });
   } catch (err) {
     console.error("❌ Error deleting project:", err);
     res.status(500).json({ error: "Server error" });
