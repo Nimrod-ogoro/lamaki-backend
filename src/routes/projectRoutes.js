@@ -17,28 +17,6 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
 // ==========================================================
-// ============   PROJECT ROUTES (CRUD)   ===================
-// ==========================================================
-
-// ===== CREATE PROJECT =====
-// Option 1: Frontend uploads images directly using signed URL
-// Option 2: Upload images through backend using Multer
-router.post("/", upload.array("images", 10), createProject);
-
-// ===== GET ALL PROJECTS =====
-router.get("/", getProjects);
-
-// ===== GET PROJECT BY ID =====
-router.get("/:id", getProjectById);
-
-// ===== UPDATE PROJECT =====
-// Supports new images via Multer, or frontend direct upload
-router.put("/:id", upload.array("images", 10), updateProject);
-
-// ===== DELETE PROJECT =====
-router.delete("/:id", deleteProject);
-
-// ==========================================================
 // ============   CLOUD STORAGE HELPERS   ===================
 // ==========================================================
 
@@ -58,12 +36,35 @@ router.get("/signed-url", async (req, res) => {
 
     res.json(result);
   } catch (err) {
-    console.error("Error generating signed URL:", err);
+    console.error("❌ Error generating signed URL:", err);
     res.status(500).json({ error: "Failed to generate signed URL" });
   }
 });
 
+// ==========================================================
+// ============   PROJECT ROUTES (CRUD)   ===================
+// ==========================================================
+
+// ===== CREATE PROJECT =====
+// Option 1: Frontend uploads images directly using signed URL
+// Option 2: Upload images through backend using Multer
+router.post("/", upload.array("images", 10), createProject);
+
+// ===== GET ALL PROJECTS =====
+router.get("/", getProjects);
+
+// ===== UPDATE PROJECT =====
+// Supports new images via Multer, or frontend direct upload
+router.put("/:id", upload.array("images", 10), updateProject);
+
+// ===== GET PROJECT BY ID =====
+router.get("/:id", getProjectById);
+
+// ===== DELETE PROJECT =====
+router.delete("/:id", deleteProject);
+
 module.exports = router;
+;
 
 
 
