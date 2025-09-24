@@ -1,4 +1,5 @@
 // r2.js
+// r2.js
 const AWS = require("aws-sdk");
 
 // Configure S3 for Cloudflare R2
@@ -6,9 +7,12 @@ const s3 = new AWS.S3({
   endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
   accessKeyId: process.env.R2_ACCESS_KEY_ID,
   secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
-  region: "auto", // R2 uses "auto", AWS SDK is okay with this
+  region: "auto",
   signatureVersion: "v4",
+  s3ForcePathStyle: true,      // ← NEW (fixes signature)
+  signatureCache: false        // ← NEW (avoid stale sigs)
 });
+// rest of file stays identical …
 
 // Helper: generate safe object key
 function generateKey(filename) {
