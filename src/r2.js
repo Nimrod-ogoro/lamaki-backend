@@ -1,4 +1,4 @@
-// r2.js  –  Cloudflare R2 helper  (no hard-coded host)
+// r2.js  –  Cloudflare R2 helper  (hard-coded NEW public host)
 const AWS = require("aws-sdk");
 
 const s3 = new AWS.S3({
@@ -11,25 +11,21 @@ const s3 = new AWS.S3({
   signatureCache: false
 });
 
-/* ---------- helpers ---------- */
-const generateKey = (filename) => `${Date.now()}_${filename.replace(/\s+/g, "_")}`;
+const generateKey = (f) => `${Date.now()}_${f.replace(/\s+/g, "_")}`;
 
 /* ---------- 1.  backend upload (multer)  ---------- */
 async function uploadToR2(file) {
   if (!file) return null;
-  const key = generateKey(file.originalname);
-
-  // upload with ACL → public
   const uploaded = await s3.upload({
     Bucket: process.env.R2_BUCKET_NAME,
-    Key: key,
+    Key: generateKey(file.originalname),
     Body: file.buffer,
     ContentType: file.mimetype,
     ACL: "public-read"
   }).promise();
 
-  // Cloudflare returns the **public** URL – use it (no string build)
-  return uploaded.Location; // ✅ https://pub-<NEW-HASH>.r2.dev/<key>
+  // use the **new** public host (no old account hash)
+  return `https://pub-06a2a441a00c4ef597b4f4f0cac7cddf.r2.dev/${uploaded.Key}`;
 }
 
 /* ---------- 2.  signed URL for browser direct upload  ---------- */
@@ -46,14 +42,14 @@ async function getSignedUploadURL(filename, mimetype) {
 
   const uploadURL = await s3.getSignedUrlPromise("putObject", params);
 
-  // after PUT, object will be public – same host Cloudflare returns
-  const fileURL = `https://pub-${process.env.R2_ACCOUNT_ID}.r2.dev/${key}`;
+  // ✅ NEW public host – zero old account ID
+  const fileURL = `https://pub-06a2a441a00c4ef597b4f4f0cac7cddf.r2.dev/${key}`;
 
   return {
-    uploadURL, // signed PUT url
-    fileURL,   // public GET url (matches uploaded.Location)
+    uploadURL,
+    fileURL,
     key,
-    headers: { "x-amz-acl": "public-read" } // browser must send
+    headers: { "x-amz-acl": "public-read" }
   };
 }
 
