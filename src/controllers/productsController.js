@@ -1,5 +1,5 @@
 const pool = require("../db");
-const uploadToR2 = require("../r2");
+const uploadToR2 = require("../r2")
 
 // Helper → ensure numeric
 function parseNumber(value, fallback = 0) {
