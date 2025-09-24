@@ -47,7 +47,7 @@ async function getSignedUploadURL(filename, mimetype) {
   // 2.  create signed URL with ACL
   const uploadURL = await s3.getSignedUrlPromise("putObject", params);
 
-  // 3.  tell front-end which headers must be sent
+  // 3.  return both URLs + headers the browser must send
   return {
     uploadURL,
     fileURL: `https://pub-${process.env.R2_ACCOUNT_ID}.r2.dev/${key}`,
@@ -70,5 +70,4 @@ module.exports = {
   getSignedUploadURL,
   getSignedDownloadURL
 };
-
 
