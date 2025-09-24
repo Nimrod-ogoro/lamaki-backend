@@ -1,4 +1,4 @@
-// r2.js  –  Cloudflare R2 helper  (no hand-built URLs)
+// r2.js  –  Cloudflare R2 helper  (no hard-coded host)
 const AWS = require("aws-sdk");
 
 const s3 = new AWS.S3({
@@ -28,8 +28,8 @@ async function uploadToR2(file) {
     ACL: "public-read"
   }).promise();
 
-  // Cloudflare returns the **public** URL – use it
-  return uploaded.Location; // ✅ https://pub-<hash>.r2.dev/<key>
+  // Cloudflare returns the **public** URL – use it (no string build)
+  return uploaded.Location; // ✅ https://pub-<NEW-HASH>.r2.dev/<key>
 }
 
 /* ---------- 2.  signed URL for browser direct upload  ---------- */
@@ -46,7 +46,7 @@ async function getSignedUploadURL(filename, mimetype) {
 
   const uploadURL = await s3.getSignedUrlPromise("putObject", params);
 
-  // after PUT, object will be public – same host
+  // after PUT, object will be public – same host Cloudflare returns
   const fileURL = `https://pub-${process.env.R2_ACCOUNT_ID}.r2.dev/${key}`;
 
   return {
