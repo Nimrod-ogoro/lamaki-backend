@@ -26,7 +26,7 @@ async function uploadToR2(file) {
     Key: key,
     Body: file.buffer,
     ContentType: file.mimetype,
-    ACL: "public-read" // ← makes object readable
+    ACL: "public-read"
   }).promise();
   return `https://pub-${process.env.R2_ACCOUNT_ID}.r2.dev/${key}`;
 }
@@ -34,15 +34,26 @@ async function uploadToR2(file) {
 /* ---------- signed URL for front-end direct upload ---------- */
 async function getSignedUploadURL(filename, mimetype) {
   const key = generateKey(filename);
-  const uploadURL = await s3.getSignedUrlPromise("putObject", {
+
+  // 1.  parameters that include ACL (must be signed)
+  const params = {
     Bucket: process.env.R2_BUCKET_NAME,
     Key: key,
     ContentType: mimetype,
     Expires: 60,
-    ACL: "public-read" // ← NEW: object readable without token
-  });
-  const fileURL = `https://pub-${process.env.R2_ACCOUNT_ID}.r2.dev/${key}`;
-  return { uploadURL, fileURL, key };
+    ACL: "public-read"
+  };
+
+  // 2.  create signed URL with ACL
+  const uploadURL = await s3.getSignedUrlPromise("putObject", params);
+
+  // 3.  tell front-end which headers must be sent
+  return {
+    uploadURL,
+    fileURL: `https://pub-${process.env.R2_ACCOUNT_ID}.r2.dev/${key}`,
+    key,
+    headers: { "x-amz-acl": "public-read" } // ← browser must add this
+  };
 }
 
 /* ---------- optional private download ---------- */
