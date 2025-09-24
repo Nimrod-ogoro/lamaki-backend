@@ -1,7 +1,6 @@
-// r2.js
+// r2.js  –  Cloudflare R2 helper  (no hand-built URLs)
 const AWS = require("aws-sdk");
 
-// Configure S3 for Cloudflare R2
 const s3 = new AWS.S3({
   endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
   accessKeyId: process.env.R2_ACCESS_KEY_ID,
@@ -13,29 +12,30 @@ const s3 = new AWS.S3({
 });
 
 /* ---------- helpers ---------- */
-function generateKey(filename) {
-  return `${Date.now()}_${filename.replace(/\s+/g, "_")}`;
-}
+const generateKey = (filename) => `${Date.now()}_${filename.replace(/\s+/g, "_")}`;
 
-/* ---------- backend upload (admin API) ---------- */
+/* ---------- 1.  backend upload (multer)  ---------- */
 async function uploadToR2(file) {
   if (!file) return null;
   const key = generateKey(file.originalname);
-  await s3.upload({
+
+  // upload with ACL → public
+  const uploaded = await s3.upload({
     Bucket: process.env.R2_BUCKET_NAME,
     Key: key,
     Body: file.buffer,
     ContentType: file.mimetype,
     ACL: "public-read"
   }).promise();
-  return `https://pub-${process.env.R2_ACCOUNT_ID}.r2.dev/${key}`;
+
+  // Cloudflare returns the **public** URL – use it
+  return uploaded.Location; // ✅ https://pub-<hash>.r2.dev/<key>
 }
 
-/* ---------- signed URL for front-end direct upload ---------- */
+/* ---------- 2.  signed URL for browser direct upload  ---------- */
 async function getSignedUploadURL(filename, mimetype) {
   const key = generateKey(filename);
 
-  // 1.  parameters that include ACL (must be signed)
   const params = {
     Bucket: process.env.R2_BUCKET_NAME,
     Key: key,
@@ -44,21 +44,22 @@ async function getSignedUploadURL(filename, mimetype) {
     ACL: "public-read"
   };
 
-  // 2.  create signed URL with ACL
   const uploadURL = await s3.getSignedUrlPromise("putObject", params);
 
-  // 3.  return both URLs + headers the browser must send
+  // after PUT, object will be public – same host
+  const fileURL = `https://pub-${process.env.R2_ACCOUNT_ID}.r2.dev/${key}`;
+
   return {
-    uploadURL,
-    fileURL: `https://pub-${process.env.R2_ACCOUNT_ID}.r2.dev/${key}`,
+    uploadURL, // signed PUT url
+    fileURL,   // public GET url (matches uploaded.Location)
     key,
-    headers: { "x-amz-acl": "public-read" } // ← browser must add this
+    headers: { "x-amz-acl": "public-read" } // browser must send
   };
 }
 
-/* ---------- optional private download ---------- */
+/* ---------- 3.  optional signed GET (private objects)  ---------- */
 async function getSignedDownloadURL(key) {
-  return await s3.getSignedUrlPromise("getObject", {
+  return s3.getSignedUrlPromise("getObject", {
     Bucket: process.env.R2_BUCKET_NAME,
     Key: key,
     Expires: 300
@@ -70,4 +71,3 @@ module.exports = {
   getSignedUploadURL,
   getSignedDownloadURL
 };
-
