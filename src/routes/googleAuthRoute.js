@@ -6,7 +6,7 @@ const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || "supersecret";
 
 // Use environment variable for frontend URL (default to localhost)
-const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
+const FRONTEND_URL = process.env.FRONTEND_URL || "https://lamaki-construction.vercel.app"; ;
 
 // Step 1: Start OAuth login
 router.get(
