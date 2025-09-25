@@ -19,7 +19,7 @@ router.post('/', async (req, res) => {
   if (!author || !body || rating < 1 || rating > 5) return res.status(400).json({error:'invalid'});
   const [newRow] = await db`
     INSERT INTO reviews (author, rating, body, approved)
-    VALUES (${author}, ${rating}, ${body}, false)  -- auto-approve if you trust
+    VALUES (${author}, ${rating}, ${body}, true)  -- auto-approve if you trust
     RETURNING id, author, rating, body, created_at, source`;
   res.status(201).json(newRow);
 });
