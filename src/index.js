@@ -194,7 +194,7 @@ app.use("/api/projects", projectRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/mpesa", mpesaRoutes);
-app.use("/api/reviews", reviewRoutes ); // reviews route
+app.use("/api/reviews", reviewRoutes); // reviews route
 // ===== 404 Handler =====
 app.use((req, res) => {
   res.status(404).json({ error: "Route not found" });
