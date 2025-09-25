@@ -21,7 +21,7 @@ const projectRoutes = require("./routes/projectRoutes");
 const orderRoutes = require("./routes/OrderRoutes");
 const cartRoutes = require("./routes/Cart");
 const mpesaRoutes = require("./routes/mpesa");
-const reviewRoutes = require("./routes/reviews");
+const reviewRoutes = require("./routes/reviews")
 
 const app = express();
 
