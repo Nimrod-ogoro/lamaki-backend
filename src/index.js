@@ -38,7 +38,7 @@ const defaultAllowed = [
   "http://localhost:5173",
   "https://lamaki-construction.vercel.app",
   "https://lamaki-construction-git-main-nimrod-ogoros-projects.vercel.app",
-  "https://www.lamakidesigns.co.ke/",
+  "https://www.lamakidesigns.co.ke",
 ];
 
 const allowedOriginsEnv = (process.env.ALLOWED_ORIGINS || "").split(",").map(s => s.trim()).filter(Boolean);
