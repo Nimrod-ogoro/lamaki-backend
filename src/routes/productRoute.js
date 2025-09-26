@@ -15,19 +15,13 @@ const router = express.Router();
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// ===== CREATE PRODUCT =====
-router.post("/", upload.single("image"), createProduct);
-
-// ===== GET ALL PRODUCTS =====
+/* ---------- public routes ---------- */
 router.get("/", getProducts);
-
-// ===== GET PRODUCT BY ID =====
 router.get("/:id", getProductById);
 
-// ===== UPDATE PRODUCT =====
+/* ---------- admin / mutating routes ---------- */
+router.post("/", upload.single("image"), createProduct);
 router.put("/:id", upload.single("image"), updateProduct);
-
-// ===== DELETE PRODUCT =====
 router.delete("/:id", deleteProduct);
 
 module.exports = router;
